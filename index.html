@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>导航</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --glass: rgba(255,255,255,.14);
+    --glass-brd: rgba(255,255,255,.22);
+    --text:#fff;
+    --sub: rgba(255,255,255,.72);
+  }
+  html,body{ min-height:100%; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1100px 700px at 85% -10%, rgba(255,94,98,.55), transparent 60%),
+      radial-gradient(1000px 800px at -10% 30%, rgba(64,156,255,.55), transparent 60%),
+      radial-gradient(900px 700px at 90% 85%, rgba(191,90,242,.5), transparent 60%),
+      radial-gradient(700px 600px at 30% 100%, rgba(48,209,88,.35), transparent 60%),
+      linear-gradient(160deg,#1c1c2e 0%,#10101c 100%);
+    background-attachment:fixed;
+    padding: calc(18px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));
+  }
+  .wrap{ max-width:860px; margin:0 auto; }
+  header{ text-align:center; padding:18px 0 6px; }
+  #clock{ font-size:64px; font-weight:700; letter-spacing:-1px; line-height:1; text-shadow:0 2px 18px rgba(0,0,0,.25); font-variant-numeric:tabular-nums; }
+  #date{ margin-top:8px; font-size:16px; color:var(--sub); font-weight:500; }
+  .toolbar{ display:flex; gap:10px; align-items:center; margin:20px auto 4px; max-width:560px; }
+  .search{
+    flex:1; display:flex; align-items:center; gap:8px;
+    background:rgba(255,255,255,.16); border:1px solid var(--glass-brd);
+    border-radius:14px; padding:10px 14px; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  }
+  .search svg{ flex:none; opacity:.75; }
+  .search input{
+    flex:1; background:none; border:none; outline:none; color:#fff; font-size:16px; min-width:0;
+  }
+  .search input::placeholder{ color:rgba(255,255,255,.55); }
+  .tbtn{
+    border:1px solid var(--glass-brd); background:rgba(255,255,255,.16); color:#fff;
+    font-size:15px; font-weight:600; padding:10px 16px; border-radius:14px; cursor:pointer;
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); white-space:nowrap;
+  }
+  .tbtn:active{ transform:scale(.96); }
+  .tbtn.on{ background:#0a84ff; border-color:#0a84ff; }
+  section{
+    margin-top:18px; background:var(--glass); border:1px solid var(--glass-brd);
+    border-radius:26px; padding:16px 14px 8px;
+    backdrop-filter:blur(22px) saturate(1.4); -webkit-backdrop-filter:blur(22px) saturate(1.4);
+    box-shadow:0 12px 32px rgba(0,0,0,.22);
+  }
+  section h2{ font-size:14px; font-weight:600; color:var(--sub); padding:0 6px 12px; letter-spacing:.4px; }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px 2px; }
+  @media (min-width:640px){ .grid{ grid-template-columns:repeat(6,1fr); } #clock{ font-size:76px; } }
+  .app{ position:relative; text-align:center; padding:6px 2px 10px; }
+  .app a{ text-decoration:none; color:#fff; display:block; }
+  .icon{
+    width:58px; height:58px; margin:0 auto; border-radius:15px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:21px; font-weight:700; color:#fff; letter-spacing:.2px;
+    box-shadow:0 6px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.35);
+    user-select:none;
+  }
+  .name{ margin-top:6px; font-size:12px; line-height:1.25; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.35);
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .editing .icon{ animation:jiggle .28s ease-in-out infinite alternate; }
+  .editing .app:nth-child(2n) .icon{ animation-delay:.14s; }
+  @keyframes jiggle{ from{ transform:rotate(-1.6deg); } to{ transform:rotate(1.6deg); } }
+  .del{
+    position:absolute; top:-2px; left:calc(50% - 38px); width:22px; height:22px; border-radius:50%;
+    background:#ff3b30; color:#fff; border:2px solid rgba(255,255,255,.9); font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center; cursor:pointer; z-index:3; font-weight:700;
+  }
+  .editing .del{ display:flex; }
+  .empty{ text-align:center; color:var(--sub); font-size:14px; padding:26px 0 30px; display:none; }
+  footer{ text-align:center; color:rgba(255,255,255,.5); font-size:12.5px; margin-top:22px; line-height:1.7; }
+  footer button{ background:none; border:none; color:rgba(255,255,255,.65); font-size:12.5px; text-decoration:underline; cursor:pointer; }
+  #dock{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    display:flex; gap:20px; padding:12px 18px;
+    background:rgba(255,255,255,.2); border:1px solid var(--glass-brd); border-radius:30px;
+    backdrop-filter:blur(24px) saturate(1.5); -webkit-backdrop-filter:blur(24px) saturate(1.5);
+    box-shadow:0 14px 34px rgba(0,0,0,.3); z-index:20;
+  }
+  #dock .app{ padding:0; }
+  #dock .name{ display:none; }
+  dialog{
+    border:none; border-radius:22px; padding:0; width:min(92vw,380px);
+    background:rgba(38,38,46,.96); color:#fff; box-shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+  dialog::backdrop{ background:rgba(0,0,0,.45); backdrop-filter:blur(3px); }
+  .form{ padding:22px 20px 18px; }
+  .form h3{ font-size:18px; margin-bottom:16px; }
+  .form label{ display:block; font-size:13px; color:var(--sub); margin:12px 0 6px; }
+  .form input,.form select{
+    width:100%; padding:11px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.08); color:#fff; font-size:16px; outline:none;
+  }
+  .form select option{ color:#000; }
+  .colors{ display:flex; gap:9px; flex-wrap:wrap; margin-top:2px; }
+  .colors button{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
+  .colors button.sel{ border-color:#fff; transform:scale(1.12); }
+  .frow{ display:flex; gap:10px; margin-top:22px; }
+  .frow button{ flex:1; padding:12px; border-radius:13px; border:none; font-size:16px; font-weight:600; cursor:pointer; }
+  #saveBtn{ background:#0a84ff; color:#fff; }
+  #cancelBtn{ background:rgba(255,255,255,.14); color:#fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div id="clock">--:--</div>
+    <div id="date"></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>
+      <input id="q" type="search" placeholder="搜索" autocomplete="off">
+    </div>
+    <button class="tbtn" id="addBtn">＋ 添加</button>
+    <button class="tbtn" id="editBtn">编辑</button>
+  </div>
+
+  <main id="groups"></main>
+  <div class="empty" id="empty">没有找到匹配的书签</div>
+
+  <footer>
+    192.168.50.x 的服务需在家里网络或 Tailscale 下打开<br>
+    书签保存在当前浏览器里，换设备不同步 · <button id="resetBtn" type="button">恢复默认书签</button>
+  </footer>
+</div>
+
+<nav id="dock"></nav>
+
+<dialog id="dlg">
+  <form method="dialog" class="form" id="bmForm">
+    <h3 id="dlgTitle">添加书签</h3>
+    <label>名称</label>
+    <input id="fName" required maxlength="16" placeholder="例如：OpenClash 面板">
+    <label>网址</label>
+    <input id="fUrl" required placeholder="例如：192.168.50.3:9090/ui" inputmode="url">
+    <label>分组</label>
+    <select id="fGroup"></select>
+    <label>图标文字（1–2 个字或字母）</label>
+    <input id="fGlyph" maxlength="3" placeholder="留空则用名称首字">
+    <label>图标颜色</label>
+    <div class="colors" id="fColors"></div>
+    <div class="frow">
+      <button type="button" id="cancelBtn">取消</button>
+      <button type="submit" id="saveBtn">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const GROUPS = ["iStoreOS 服务","家里设备与自有服务","常用收藏"];
+const PALETTE = [
+  ["#30d158","#0a84ff"],["#0a84ff","#5e5ce6"],["#ff9f0a","#ff453a"],["#bf5af2","#5e5ce6"],
+  ["#64d2ff","#0a84ff"],["#ff375f","#ff9f0a"],["#32ade6","#30d158"],["#8e8e93","#48484a"],
+  ["#ffd60a","#ff9f0a"],["#66d4cf","#0a84ff"]
+];
+const DEFAULTS = [
+  // iStoreOS 服务（G40 192.168.50.3，2026-10-30 实查监听）
+  {name:"iStoreOS 后台", url:"http://192.168.50.3/", group:0, glyph:"iS", color:1},
+  {name:"OpenClash 面板", url:"http://192.168.50.3:9090/ui/", group:0, glyph:"OC", color:2},
+  {name:"网页终端 ttyd", url:"http://192.168.50.3:7681/", group:0, glyph:">_", color:7},
+  {name:"LinkEase", url:"http://192.168.50.3:8897/", group:0, glyph:"Le", color:4},
+  // 家里设备与自有服务
+  {name:"华硕主路由", url:"http://192.168.50.1/", group:1, glyph:"华", color:3},
+  {name:"Vaultwarden", url:"https://vault.kuke.uk", group:1, glyph:"Vw", color:0},
+  {name:"Sub-Store", url:"https://sub.kuke.uk", group:1, glyph:"Ss", color:5},
+  // 常用收藏
+  {name:"LINUX DO", url:"https://linux.do", group:2, glyph:"LD", color:6},
+  {name:"V2EX", url:"https://www.v2ex.com", group:2, glyph:"V2", color:7},
+  {name:"NodeSeek", url:"https://www.nodeseek.com", group:2, glyph:"NS", color:1},
+  {name:"恩山论坛", url:"https://www.right.com.cn/forum/", group:2, glyph:"恩", color:2},
+  {name:"粉笔", url:"https://www.fenbi.com", group:2, glyph:"粉", color:8},
+  {name:"人民网观点", url:"http://opinion.people.com.cn", group:2, glyph:"人", color:2}
+];
+const DOCK_NAMES = ["iStoreOS 后台","OpenClash 面板","Vaultwarden","Sub-Store"];
+const KEY = "ios-nav-bookmarks-v1";
+let items;
+try { items = JSON.parse(localStorage.getItem(KEY)) || null; } catch(e){ items = null; }
+if (!Array.isArray(items) || !items.length) { items = DEFAULTS.slice(); save(); }
+let editing = false, editIdx = -1, selColor = 1;
+
+function save(){ localStorage.setItem(KEY, JSON.stringify(items)); }
+function grad(c){ const p = PALETTE[c % PALETTE.length]; return "linear-gradient(145deg,"+p[0]+","+p[1]+")"; }
+function esc(s){ return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+function tile(it, idx){
+  const d = document.createElement("div"); d.className = "app";
+  d.innerHTML = '<div class="del" title="删除">−</div>' +
+    '<a href="'+esc(it.url)+'"><div class="icon" style="background:'+grad(it.color||0)+'">'+esc(it.glyph || it.name.slice(0,1))+'</div>' +
+    '<div class="name">'+esc(it.name)+'</div></a>';
+  d.querySelector("a").addEventListener("click", e => { if (editing){ e.preventDefault(); openForm(idx); } });
+  d.querySelector(".del").addEventListener("click", e => {
+    e.stopPropagation();
+    if (confirm("删除「"+it.name+"」？")) { items.splice(idx,1); save(); render(); }
+  });
+  return d;
+}
+function render(){
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const main = document.getElementById("groups"); main.innerHTML = "";
+  let shown = 0;
+  GROUPS.forEach((g, gi) => {
+    const list = items.map((it,i)=>[it,i]).filter(([it]) => it.group===gi && (!q || it.name.toLowerCase().includes(q) || it.url.toLowerCase().includes(q)));
+    if (!list.length) return;
+    const sec = document.createElement("section");
+    sec.innerHTML = "<h2>"+esc(g)+"</h2>";
+    const grid = document.createElement("div"); grid.className = "grid";
+    list.forEach(([it,i]) => { grid.appendChild(tile(it,i)); shown++; });
+    sec.appendChild(grid); main.appendChild(sec);
+  });
+  document.getElementById("empty").style.display = shown ? "none" : "block";
+  const dock = document.getElementById("dock"); dock.innerHTML = "";
+  DOCK_NAMES.forEach(n => {
+    const i = items.findIndex(it => it.name === n);
+    if (i >= 0) dock.appendChild(tile(items[i], i));
+  });
+  document.body.classList.toggle("editing", editing);
+  document.getElementById("editBtn").textContent = editing ? "完成" : "编辑";
+  document.getElementById("editBtn").classList.toggle("on", editing);
+}
+function tick(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,"0"), mm = String(now.getMinutes()).padStart(2,"0");
+  document.getElementById("clock").textContent = hh+":"+mm;
+  const wk = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"][now.getDay()];
+  document.getElementById("date").textContent = (now.getMonth()+1)+"月"+now.getDate()+"日 "+wk;
+}
+tick(); setInterval(tick, 10000);
+
+const dlg = document.getElementById("dlg");
+const groupSel = document.getElementById("fGroup");
+GROUPS.forEach((g,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=g; groupSel.appendChild(o); });
+const colorsBox = document.getElementById("fColors");
+PALETTE.forEach((p,i)=>{
+  const b = document.createElement("button"); b.type="button";
+  b.style.background = "linear-gradient(145deg,"+p[0]+","+p[1]+")";
+  b.addEventListener("click", ()=>{ selColor=i; paintColors(); });
+  colorsBox.appendChild(b);
+});
+function paintColors(){ [...colorsBox.children].forEach((b,i)=>b.classList.toggle("sel", i===selColor)); }
+function openForm(idx){
+  editIdx = idx;
+  const it = idx >= 0 ? items[idx] : {name:"", url:"", group:2, glyph:"", color:1};
+  document.getElementById("dlgTitle").textContent = idx >= 0 ? "编辑书签" : "添加书签";
+  document.getElementById("fName").value = it.name;
+  document.getElementById("fUrl").value = it.url;
+  groupSel.value = it.group;
+  document.getElementById("fGlyph").value = it.glyph || "";
+  selColor = it.color || 0; paintColors();
+  dlg.showModal();
+}
+document.getElementById("addBtn").addEventListener("click", ()=>openForm(-1));
+document.getElementById("cancelBtn").addEventListener("click", ()=>dlg.close());
+document.getElementById("bmForm").addEventListener("submit", e => {
+  e.preventDefault();
+  let url = document.getElementById("fUrl").value.trim();
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) url = "http://" + url;
+  const data = {
+    name: document.getElementById("fName").value.trim(),
+    url: url,
+    group: parseInt(groupSel.value, 10),
+    glyph: document.getElementById("fGlyph").value.trim(),
+    color: selColor
+  };
+  if (!data.name) return;
+  if (editIdx >= 0) items[editIdx] = data; else items.push(data);
+  save(); render(); dlg.close();
+});
+document.getElementById("editBtn").addEventListener("click", ()=>{ editing = !editing; render(); });
+document.getElementById("q").addEventListener("input", render);
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if (confirm("恢复成默认的 13 个书签？你加的和改的都会清掉。")) { items = DEFAULTS.slice(); save(); render(); }
+});
+render();
+</script>
+</body>
+</html>
